@@ -135,7 +135,7 @@
     
     <i class="icon-calendar"></i>
     
-    <time datetime="2019-05-14T09:15:55.499Z" itemprop="datePublished">2019-05-14</time>
+    <time datetime="2019-05-14T09:41:27.618Z" itemprop="datePublished">2019-05-14</time>
 </a>
 
             
@@ -148,7 +148,9 @@
         <h2 id="线程安全的对象生命期管理"><a href="#线程安全的对象生命期管理" class="headerlink" title="线程安全的对象生命期管理"></a>线程安全的对象生命期管理</h2><h3 id="线程安全的定义"><a href="#线程安全的定义" class="headerlink" title="线程安全的定义"></a>线程安全的定义</h3><p>满足三个条件：<br>１)多个线程同时访问时，表现出正确的行为<br>２)无论操作系统如何调度线程，无论这些线程的执行顺序如何交织<br>３)调用端代码无须额外的同步或其他协调动作</p>
 <h3 id="对象的创建要求"><a href="#对象的创建要求" class="headerlink" title="对象的创建要求"></a>对象的创建要求</h3><p>１)不要在构造函数中注册任何回调<br>２)不要在构造函数中把this指针转给跨线程的对象</p>
 <p>因为在构造函数执行期间对象还没有完成初始化，如果this被泄露给其他对象，其他线程可能访问这个半成品对象造成问题</p>
-<h3 id="对象的析构"><a href="#对象的析构" class="headerlink" title="对象的析构"></a>对象的析构</h3><p>　数据成员的mutex不能保护析构，</p>
+<h3 id="对象的析构"><a href="#对象的析构" class="headerlink" title="对象的析构"></a>对象的析构</h3><p>　数据成员的mutex不能保护析构，析构过程不需要保护，以为只有别的线程都访问不到该对象时，析构才是安全的，否则会有竞态条件发生．<br>如果同时读写一个class的两个对象，有潜在的死锁可能，比如</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">swap</span><span class="params">(Counter &amp;a, Counter &amp;b)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="function">MutexLockGuard <span class="title">alock</span><span class="params">(a.mutex_)</span></span>;</span><br><span class="line">	<span class="function">MutexLockGuard <span class="title">block</span><span class="params">(b.mutex_)</span></span>;</span><br><span class="line">	......</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>如果线程A执行swap(a,b)，同时线程B执行swap(b,a)，有可能死锁，一个函数如果要锁住相同类型的多个对象，为了保证始终按相同的顺序加锁<br>可以比较mutex对象的地址，先加锁地址比较小的</p>
 
         
     </section>
