@@ -127,6 +127,43 @@
     <header class="article-header">
         
         <h1 itemprop="name">
+            <a href="/2019/05/17/linux-C++2/">C++多线程系统编程（二）</a>
+        </h1>
+        
+        <div class="article-meta clearfix">
+            <a class="article-date" href="http://yoursite.com/index.html">
+    
+    <i class="icon-calendar"></i>
+    
+    <time datetime="2019-05-17T08:49:04.372Z" itemprop="datePublished">2019-05-17</time>
+</a>
+
+            
+
+        </div>
+    </header>
+    
+    <section class="article-body markdown-body">
+        
+        <h3 id="线程同步的四项原则"><a href="#线程同步的四项原则" class="headerlink" title="线程同步的四项原则"></a>线程同步的四项原则</h3><p>1、首要原则是尽量最低限度地共享对象，减少需要同步的场合。一个对象能不暴露给别的线程就不要暴露；<br>如果要暴露， 优先考虑immutable 对象； 实在不行才暴露可修改的对象， 并用同步措施来充分保护它<br>2、其次是使用高级的并发编程构件，如TaskQueue 、Producer-Consumer Queue 、CountDownLatch 等<br>3、最后不得已必须使用底层同步原语（ primitives ）时，只用非递归的互斥器和条件变量，慎用读写锁，<br>不要用信号量<br>4、除了使用atomic 整数之外，不自己编写lock-free， 也不要用“内核级”同步原i吾。不凭空猜测“哪种做<br>法性能会更好”，比如spin lock vs. mutex</p>
+<h3 id="互斥器（mutex）"><a href="#互斥器（mutex）" class="headerlink" title="互斥器（mutex）"></a>互斥器（mutex）</h3><p> 单独使用mutex 时，我们主要为了保护共享数据,主要原则是：<br>1、用RAii 手法封装mutex 的创建、销毁、加锁、解锁这四个操作<br>2、只用非递归的mutex（ 即不可重人的mutex ）<br>3、不手工调用lock(）和unlock() 函数，一切交给枝上的Guard 对象的构造和析构函数负责，Guard 对象的<br>生命期正好等于临界区，这样我们保证始终在同一个函数同一个scope 里对某个mutex 加锁和解锁。<br>4、在每次构造Guard 对象的时候，思考一路上（ 调用栈上）已经持有的锁，防止因加锁顺序不同而导致死锁<br>（ deadlock ）。由于Guard 对象是栈上对象，看函数调用栈就能分析用锁的情况，非常便利。<br>另外<br>a)不使用跨进程的mutex ，进程间通信只用TCP sockets。<br>b)加锁、解锁在同一个线程，线程a 不能去unlock线程b已经锁住的mutex( RAII 自动保证）。</p>
+<h3 id="只使用非递归的mutex"><a href="#只使用非递归的mutex" class="headerlink" title="只使用非递归的mutex"></a>只使用非递归的mutex</h3><p>递归(recursive)和非递归(non-recursive )这两种mutex 作为线程间( inter-thread ）的同步工具时没有区<br>别，它们的唯一区别在于:同一个线程可以重复对recursive mutex 加锁，但是不能重复对non-recursive mutex<br>加锁<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">MutexLock mutex;  </span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">foo</span><span class="params">()</span>  </span></span><br><span class="line"><span class="function"></span>&#123;  </span><br><span class="line">    mutex.lock();  </span><br><span class="line">    <span class="comment">// do something  </span></span><br><span class="line">    mutex.unlock();  </span><br><span class="line">&#125;  </span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">bar</span><span class="params">()</span>  </span></span><br><span class="line"><span class="function"></span>&#123;  </span><br><span class="line">    mutex.lock();  </span><br><span class="line">    <span class="comment">// do something  </span></span><br><span class="line">    foo();  </span><br><span class="line">    mutex.unlock();   </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>对于非递归的锁，上面的代码会出现死锁，如果使用递归的锁，可能会出现其他问题，死锁的问题比较容易debug</p>
+<h3 id="条件变量"><a href="#条件变量" class="headerlink" title="条件变量"></a>条件变量</h3><p>   互斥器是加锁原语，用来排他性地访问共享数据，它不是等待原语。在使用mutex 的时候，我们一般都会期望加锁<br>不要阻塞，总是能立刻拿到锁。如果需要等待某个条件成立，我们应该使用条件变量(condition variable)。条<br>件变量顾名思义是一个或多个线程等待某个布尔表达式为真，即等待别的线程“唤醒”它<br>   条件变量只有一种正确使用的方式，几乎不可能用错。对于wait 端：<br>1、必须与mutex 一起使用，该布尔表达式的读写需受此mutex 保护<br>2、在mutex 已上锁的时候才能调用wait()<br>3、把判断布尔条件和wait()放到while 循环中<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">muduo ::MutexLock mutex ;</span><br><span class="line">muduo: :<span class="function">Condition <span class="title">cond</span> <span class="params">(mutex)</span> </span>; </span><br><span class="line"><span class="built_in">std</span> ::<span class="built_in">deque</span>&lt; <span class="keyword">int</span>&gt; <span class="built_in">queue</span>;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">dequeue</span> <span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="function">MutexlockGu ard   <span class="title">lock</span><span class="params">(mutex)</span> </span>;</span><br><span class="line">    <span class="keyword">while</span>  (<span class="built_in">queue</span> .empty())    <span class="comment">//必须用循环；必须在判断之后再 wait()</span></span><br><span class="line">   &#123;</span><br><span class="line">	cond .wait () ; <span class="comment">//这一步会原子地 un lock mutex 并进入等待 ，不会与 enqueue 死锁</span></span><br><span class="line">		<span class="comment">//wa it （） 执行完毕时会自动重新加锁</span></span><br><span class="line">    ｝</span><br><span class="line">    assert ( !<span class="built_in">queue</span> .empty()) ; </span><br><span class="line">    <span class="keyword">int</span> top = <span class="built_in">queue</span>.front () ; </span><br><span class="line">    <span class="built_in">queue</span> .pop_front() ;</span><br><span class="line">    <span class="keyword">return</span> top;</span><br><span class="line">）</span><br></pre></td></tr></table></figure></p>
+<p>上面的代码中必须用while 循环来等待条件变量，而不能用if 语句，原因是spurious wakeup(虚假唤醒)</p>
+<pre><code>对于signal/broadcast 端：
+</code></pre><p>1、不一定要在mutex 巳上锁的情况下调用signal（理论上）<br>2、在signal 之前一般要修改布尔表达式<br>3、修改布尔表达式通常要用mutex 保护<br>4、注意区分signal 与broadcast: “broadcast 通常用于表明状态变化， signal通常用于表示资源可用<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">enqueue</span><span class="params">(<span class="keyword">int</span> x)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="function">MutexLockGuard <span class="title">lock</span><span class="params">(mutex)</span> </span>;</span><br><span class="line">    <span class="built_in">queue</span>.push_back(x);</span><br><span class="line">    cond.notify(); <span class="comment">//可以移出临界区之外</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h3 id="不要用读写锁和信号量"><a href="#不要用读写锁和信号量" class="headerlink" title="不要用读写锁和信号量"></a>不要用读写锁和信号量</h3>
+        
+    </section>
+</article>
+
+
+    <article class="article" itemscope itemprop="blogPost">
+    
+    <header class="article-header">
+        
+        <h1 itemprop="name">
             <a href="/2019/05/17/linux-C++/">C++多线程系统编程(一)</a>
         </h1>
         
@@ -135,7 +172,7 @@
     
     <i class="icon-calendar"></i>
     
-    <time datetime="2019-05-17T02:35:18.489Z" itemprop="datePublished">2019-05-17</time>
+    <time datetime="2019-05-17T03:58:39.539Z" itemprop="datePublished">2019-05-17</time>
 </a>
 
             
@@ -208,16 +245,6 @@
         <footer class="footer">
     Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>, Theme by <a href="https://github.com/sanonz/hexo-theme-concise" target="_blank">Concise</a>
 
-    
-    <script>
-        var _hmt = _hmt || [];
-        (function () {
-            var hm = document.createElement("script");
-            hm.src = "https://hm.baidu.com/hm.js?e4027971a230b210f4671f485b33846a";
-            var s = document.getElementsByTagName("script")[0];
-            s.parentNode.insertBefore(hm, s);
-        })();
-    </script>
     
 </footer>
 
