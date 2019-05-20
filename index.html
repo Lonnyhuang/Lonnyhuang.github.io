@@ -127,7 +127,7 @@
     <header class="article-header">
         
         <h1 itemprop="name">
-            <a href="/2019/05/17/linux-C++2/">C++多线程系统编程（二）</a>
+            <a href="/2019/05/20/linux-C++2/">C++多线程系统编程（二）</a>
         </h1>
         
         <div class="article-meta clearfix">
@@ -135,7 +135,7 @@
     
     <i class="icon-calendar"></i>
     
-    <time datetime="2019-05-17T10:06:51.224Z" itemprop="datePublished">2019-05-17</time>
+    <time datetime="2019-05-20T06:16:26.203Z" itemprop="datePublished">2019-05-20</time>
 </a>
 
             
@@ -153,7 +153,8 @@
 <p>上面的代码中必须用while 循环来等待条件变量，而不能用if 语句，原因是spurious wakeup(虚假唤醒)</p>
 <pre><code>对于signal/broadcast 端：
 </code></pre><p>1、不一定要在mutex 巳上锁的情况下调用signal（理论上）<br>2、在signal 之前一般要修改布尔表达式<br>3、修改布尔表达式通常要用mutex 保护<br>4、注意区分signal 与broadcast: “broadcast 通常用于表明状态变化， signal通常用于表示资源可用<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">enqueue</span><span class="params">(<span class="keyword">int</span> x)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="function">MutexLockGuard <span class="title">lock</span><span class="params">(mutex)</span> </span>;</span><br><span class="line">    <span class="built_in">queue</span>.push_back(x);</span><br><span class="line">    cond.notify(); <span class="comment">//可以移出临界区之外</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
-<h3 id="不要用读写锁和信号量"><a href="#不要用读写锁和信号量" class="headerlink" title="不要用读写锁和信号量"></a>不要用读写锁和信号量</h3>
+<h3 id="不要用读写锁和信号量"><a href="#不要用读写锁和信号量" class="headerlink" title="不要用读写锁和信号量"></a>不要用读写锁和信号量</h3><h3 id="线程安全的singleton-单例-实现"><a href="#线程安全的singleton-单例-实现" class="headerlink" title="线程安全的singleton(单例)实现"></a>线程安全的singleton(单例)实现</h3><p>使用pthread_once()函数，int pthread_once(pthread_once_t <em>once_control, void (</em>init_routine) (void))；<br>功能：本函数使用初值为PTHREAD_ONCE_INIT的once_control变量保证init_routine()函数在本进程执行序列中仅执行一次<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Singleton</span>:</span> boost::noncopyable</span><br><span class="line">&#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="function"><span class="keyword">static</span> T&amp; <span class="title">instance</span><span class="params">()</span></span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        pthread_once(&amp;ponce＿，&amp;Singleton::init);</span><br><span class="line">        <span class="keyword">return</span> *Value_;</span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    Singleton();</span><br><span class="line">    ~Singleton();</span><br><span class="line">    <span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">init</span><span class="params">()</span></span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        value_= <span class="keyword">new</span> T();</span><br><span class="line">    &#125;</span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    <span class="keyword">static</span> <span class="keyword">pthread_once_t</span> ponce_;</span><br><span class="line">    <span class="keyword">static</span> T* value_;</span><br><span class="line">&#125;;</span><br><span class="line">／／ 必须在头文件中定义<span class="keyword">static</span> 变量</span><br><span class="line"><span class="keyword">template</span>&lt;typenam气T&gt;</span><br><span class="line"><span class="keyword">pthread_once_t</span> S1ngleton&lt;T&gt;::ponce_ = PTHREAD_ONCE_INIT;</span><br><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line">T* Singleton&lt;T&gt;::value_ = <span class="literal">NULL</span>;</span><br></pre></td></tr></table></figure></p>
+
         
     </section>
 </article>
