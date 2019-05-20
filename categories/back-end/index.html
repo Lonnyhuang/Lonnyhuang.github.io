@@ -127,6 +127,39 @@
     <header class="article-header">
         
         <h1 itemprop="name">
+            <a href="/2019/05/20/linux-C++3/">C++多线程系统编程(三)</a>
+        </h1>
+        
+        <div class="article-meta clearfix">
+            <a class="article-date" href="http://yoursite.com/categories/back-end/index.html">
+    
+    <i class="icon-calendar"></i>
+    
+    <time datetime="2019-05-20T08:54:17.242Z" itemprop="datePublished">2019-05-20</time>
+</a>
+
+            
+
+        </div>
+    </header>
+    
+    <section class="article-body markdown-body">
+        
+        <h3 id="单线程服务器常用编程模型"><a href="#单线程服务器常用编程模型" class="headerlink" title="单线程服务器常用编程模型"></a>单线程服务器常用编程模型</h3><p>在高性能的网络程序中，使用得最为广泛是“non-blocking IO + IO multiplexing”这种模型，即Reactor模式.<br>程序的基本结构是一个事件循环(event loop), 以事件驱动(event-driven)和事件回调的方式实现业务逻辑<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">while</span> (!done)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">int</span> timeout_ms = max(<span class="number">1000</span>, getNext TimedCallback());</span><br><span class="line">    <span class="keyword">int</span> retval =: :poll(fds, nfds, timeout_ms);</span><br><span class="line">    <span class="keyword">if</span> (retval &lt; <span class="number">0</span>) &#123;</span><br><span class="line">         <span class="comment">//处理错误．回调用户的error handle</span></span><br><span class="line">     &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">         <span class="comment">//处理到期的timers，回调用户的timer handler</span></span><br><span class="line">         <span class="keyword">if</span>(retval &gt; <span class="number">0</span>)&#123;</span><br><span class="line">             <span class="comment">//处理IO 事件，因调用户的IO event handler</span></span><br><span class="line">         &#125;</span><br><span class="line">     &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>Reactor 模型的优点很明显，编程不难，效率也不错,但是基于事件驱动的编程模型也有其本质的缺点，它要求事件<br>回调函数必须是非阻塞的。对于涉及网络IO 的请求响应式协议，它容易割裂业务逻辑，使其散布于多个回调函数之<br>中，相对不容易理解和维护</p>
+<h3 id="多线程服务器常用编程模型"><a href="#多线程服务器常用编程模型" class="headerlink" title="多线程服务器常用编程模型"></a>多线程服务器常用编程模型</h3><p>1、每个请求创建一个钱程，使用阻塞式IO 操作。在Java 1.4 引人NIO 之前，这是Java 网络编程的推荐做法。<br>可惜伸缩性不佳<br>2、使用线程池，同样使用阻塞式IO 操作。与第1 种相比，这是提高性能的措施<br>3、使用non-blocking IO + IO multiplexing<br>4、Leader/Follower 等高级模式</p>
+<h4 id="one-loop-per-thread"><a href="#one-loop-per-thread" class="headerlink" title="one loop per thread"></a>one loop per thread</h4><p>此种模型下，程序里的每个IO 线程有一个event loop （或者叫Reactor ），用于处理读写和定时事件,<br>这种方式的好处是：<br>1、线程数目基本固定，可以在程序启动的时候设置，不会频繁创建与销毁<br>2、可以很方便地在线程间调配负载<br>3、IO 事件发生的线程是固定的，同一个TCP 连接不必考虑事件并发<br>    Event loop 代表了线程的主循环，需要让哪个线程程干活，就把timer 或IO channel（如ICP 连接）注册到哪个线程的<br>loop里即可。对实时性有要求的connection 可以单独用一个钱程；数据量大的connection 可以独占一个线程，并把数据<br>处理任务分摊到另几个计算线程中（用线程池）；其他次耍的辅助性connections 可以共享一个线程。<br>   多线程程序对event loop 提出了更高的要求，那就是“线程安全”。耍允许一个线程往别的线程的loop 里塞东西，<br>这个loop 必须得是线程安全的</p>
+<h4 id="线程池"><a href="#线程池" class="headerlink" title="线程池"></a>线程池</h4>
+        
+    </section>
+</article>
+
+
+    <article class="article" itemscope itemprop="blogPost">
+    
+    <header class="article-header">
+        
+        <h1 itemprop="name">
             <a href="/2019/05/20/linux-C++2/">C++多线程系统编程（二）</a>
         </h1>
         
@@ -135,7 +168,7 @@
     
     <i class="icon-calendar"></i>
     
-    <time datetime="2019-05-20T06:16:26.203Z" itemprop="datePublished">2019-05-20</time>
+    <time datetime="2019-05-20T08:03:52.453Z" itemprop="datePublished">2019-05-20</time>
 </a>
 
             
@@ -154,6 +187,7 @@
 <pre><code>对于signal/broadcast 端：
 </code></pre><p>1、不一定要在mutex 巳上锁的情况下调用signal（理论上）<br>2、在signal 之前一般要修改布尔表达式<br>3、修改布尔表达式通常要用mutex 保护<br>4、注意区分signal 与broadcast: “broadcast 通常用于表明状态变化， signal通常用于表示资源可用<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">enqueue</span><span class="params">(<span class="keyword">int</span> x)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="function">MutexLockGuard <span class="title">lock</span><span class="params">(mutex)</span> </span>;</span><br><span class="line">    <span class="built_in">queue</span>.push_back(x);</span><br><span class="line">    cond.notify(); <span class="comment">//可以移出临界区之外</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
 <h3 id="不要用读写锁和信号量"><a href="#不要用读写锁和信号量" class="headerlink" title="不要用读写锁和信号量"></a>不要用读写锁和信号量</h3><h3 id="线程安全的singleton-单例-实现"><a href="#线程安全的singleton-单例-实现" class="headerlink" title="线程安全的singleton(单例)实现"></a>线程安全的singleton(单例)实现</h3><p>使用pthread_once()函数，int pthread_once(pthread_once_t <em>once_control, void (</em>init_routine) (void))；<br>功能：本函数使用初值为PTHREAD_ONCE_INIT的once_control变量保证init_routine()函数在本进程执行序列中仅执行一次<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Singleton</span>:</span> boost::noncopyable</span><br><span class="line">&#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="function"><span class="keyword">static</span> T&amp; <span class="title">instance</span><span class="params">()</span></span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        pthread_once(&amp;ponce＿，&amp;Singleton::init);</span><br><span class="line">        <span class="keyword">return</span> *Value_;</span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    Singleton();</span><br><span class="line">    ~Singleton();</span><br><span class="line">    <span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">init</span><span class="params">()</span></span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">        value_= <span class="keyword">new</span> T();</span><br><span class="line">    &#125;</span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    <span class="keyword">static</span> <span class="keyword">pthread_once_t</span> ponce_;</span><br><span class="line">    <span class="keyword">static</span> T* value_;</span><br><span class="line">&#125;;</span><br><span class="line">／／ 必须在头文件中定义<span class="keyword">static</span> 变量</span><br><span class="line"><span class="keyword">template</span>&lt;typenam气T&gt;</span><br><span class="line"><span class="keyword">pthread_once_t</span> S1ngleton&lt;T&gt;::ponce_ = PTHREAD_ONCE_INIT;</span><br><span class="line"><span class="keyword">template</span>&lt;<span class="keyword">typename</span> T&gt;</span><br><span class="line">T* Singleton&lt;T&gt;::value_ = <span class="literal">NULL</span>;</span><br></pre></td></tr></table></figure></p>
+<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><p>1、线程同步的四项原则，尽量用高层同步设施（线程池、队列、倒计时）<br>2、使用普通互斥器和条件变量完成剩余的同步任务</p>
 
         
     </section>
