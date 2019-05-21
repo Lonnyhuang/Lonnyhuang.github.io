@@ -127,7 +127,7 @@
     <header class="article-header">
         
         <h1 itemprop="name">
-            <a href="/2019/05/20/linux-C++3/">C++多线程系统编程(三)</a>
+            <a href="/2019/05/21/linux-C++3/">C++多线程系统编程(三)</a>
         </h1>
         
         <div class="article-meta clearfix">
@@ -135,7 +135,7 @@
     
     <i class="icon-calendar"></i>
     
-    <time datetime="2019-05-20T12:59:56.434Z" itemprop="datePublished">2019-05-20</time>
+    <time datetime="2019-05-21T08:05:26.998Z" itemprop="datePublished">2019-05-21</time>
 </a>
 
             
@@ -160,6 +160,8 @@
 </ol>
 <h4 id="适合用多线程的场景"><a href="#适合用多线程的场景" class="headerlink" title="适合用多线程的场景"></a>适合用多线程的场景</h4><p>多钱程的适用场景是：提高响应速度，让IO 和“计算”相互重叠，降低latency，一个程序要做成<br>多线程的，大致要满足：<br>1、有多个CPU 可用。单核机器上多线程没有性能优势<br>2、线程间有共享数据，即内存中的全局状态。如果没有共享数据，用“主进程＋woker进程”模型即可<br>3、共享的数据是可以修改的，而不是静态的常量表。如果数据不能修改，那么可以在进程间用shaeedmemory<br>4、提供非均质的服务。即，事件的响应有优先级差异，我们可以用专门的钱程来处理优先级高的<br>事件。防止优先级反转<br>5、latency和throughput(吞吐量)同样重要，不是逻辑简单的IO bound 或CPU bound 程序。换言之，<br>程序要有相当的计算量。<br>6、利用异步操作。比如logging。无论往磁盘写log file ，还是往log server发送消息都不应该阻<br>塞critical path<br>7、能scale up。一个好的多线程程序应该能享受增加CPU 数目带来的好处，目前主流是8核，很快<br>就会用到16核的机器了。<br>8、具有可预测的性能。随着负载增加，性能缓慢下降，超过某个临界点之后会急速下降。线程数目<br>一般不随负载变化。<br>9、多线程能有效地划分责任与功能，让每个线程的逻辑比较简单，任务单一，便于编码。</p>
 <p>一个多钱程服务程序中的线程大致可分为3 类：<br>a) IO 线程，这类线程的主循环是IO multiple对ng ，阻塞地等在select/poll/epoll_wait 系统调<br>用上。这类线程也处理定时事件。当然它的功能不止IO ，有些简单计算也可以放入其中，比如消息<br>的编码或解码。<br>b) 计算线程，这类线程的主循环是blocking queue ，阻塞地等在condition variable上。这类线程<br>一般位于thread pool 。这种线程通常不涉及IO ， 一般要避免任何阻塞操作<br>c) 第三方库所用的钱程，比如logging ，又比如database connection</p>
+<h3 id="线程池大小的阻抗匹配原则"><a href="#线程池大小的阻抗匹配原则" class="headerlink" title="线程池大小的阻抗匹配原则"></a>线程池大小的阻抗匹配原则</h3><pre><code>如果池中线程在执行任务时，密集计算所占的时间比重为p (0 &lt; p &lt; 1 ），而系统一共有C 个
+</code></pre><p>CPU ，为了让这C 个CPU 跑满而又不过载，线程池大小的经验公式T = C/P。T 是个hint ，考虑到P<br>值的估计不是很准确， T 的最佳值可以上下浮动50%. 这个经验公式的原理很简单， T 个线程，每<br>个线程占用P 的CPU 时间，如果刚好占满C 个CPU ，那么必有T × P=C。下面验证一下边界条件的正<br>确性。<br>     假设C = 8, P = 1.0 ，线程池的任务完全是密集计算，那么T=8。只要8 个活动线程就能让8 个<br>CPU 饱和，再多也没用，因为CPU 资源已经耗光了。<br>     假设C = 8, P = 0.5 ，线程池的任务有一半是计算，有一半等在IO 上，那么T = 16 。考虑操作<br>系统能灵活、合理地调度sleeping/writing/ running 线程，那么大概16 个“50% 繁忙的线程”能让8个<br>CPU 忙个不停。启动更多的线程并不能提高吞吐量，反而因为增加上下文切换的开销而降低性能。<br>     如果P &lt; 0.2 ，这个公式就不适用了， T 可以取一个回定值，比如5 × C。另外，公式里的C 不<br>一定是CPU 总数，可以是“分配给这项任务的CPU 数目”，比如在8核机器上分出4 个核来做一项任务，<br>那么C = 4</p>
 
         
     </section>
