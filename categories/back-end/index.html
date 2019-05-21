@@ -127,6 +127,38 @@
     <header class="article-header">
         
         <h1 itemprop="name">
+            <a href="/2019/05/21/linux-C++4/">C++多线程系统编程（四）</a>
+        </h1>
+        
+        <div class="article-meta clearfix">
+            <a class="article-date" href="http://yoursite.com/categories/back-end/index.html">
+    
+    <i class="icon-calendar"></i>
+    
+    <time datetime="2019-05-21T09:51:16.520Z" itemprop="datePublished">2019-05-21</time>
+</a>
+
+            
+
+        </div>
+    </header>
+    
+    <section class="article-body markdown-body">
+        
+        <h3 id="C-C-系统库的线程安全性"><a href="#C-C-系统库的线程安全性" class="headerlink" title="C/C++系统库的线程安全性"></a>C/C++系统库的线程安全性</h3><pre><code>编写线程安全程序的一个难点在于线程安全是不可组合的,一个函数foo()调用了两个钱程安全的
+</code></pre><p>函数，而这个foo()函数本身很可能不是线程安全的<br>    线程安全性可以遵循一个基本原则；凡是非共亭的对象都是彼此独立的，如果一个对象从始至终<br>只被一个线程用到，那么它就是安全的。另外一个事实标准是：共亭的对象的read-only 操作是安全<br>的11 ，前提是不能有并发的写操作。</p>
+<h3 id="Linux上的线程标识"><a href="#Linux上的线程标识" class="headerlink" title="Linux上的线程标识"></a>Linux上的线程标识</h3><p>   pthread_self 函数用于返回当前进程的标识符，其类型为pthread_t, pthread_t 不一定是一个数<br>值类型（整数或指针），也有可能是一个结构体.因此Pthreads专门提供了pthread_equal函数用于对比<br>两个钱程标识符是否相等<br>   Pthreads 只保证同一进程之内，同一时刻的各个钱程的id 不同；不能保证同一进程先后多个线程<br>具有不同的id.<br>   pthread_t 并不适合用作程序中对线程的标识符。</p>
+
+        
+    </section>
+</article>
+
+
+    <article class="article" itemscope itemprop="blogPost">
+    
+    <header class="article-header">
+        
+        <h1 itemprop="name">
             <a href="/2019/05/21/linux-C++3/">C++多线程系统编程(三)</a>
         </h1>
         
