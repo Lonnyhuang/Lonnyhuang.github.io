@@ -127,6 +127,122 @@
     <header class="article-header">
         
         <h1 itemprop="name">
+            <a href="/2019/05/23/linux-C++9/">C++多线程系统编程（九）</a>
+        </h1>
+        
+        <div class="article-meta clearfix">
+            <a class="article-date" href="http://yoursite.com/index.html">
+    
+    <i class="icon-calendar"></i>
+    
+    <time datetime="2019-05-23T06:55:51.273Z" itemprop="datePublished">2019-05-23</time>
+</a>
+
+            
+
+        </div>
+    </header>
+    
+    <section class="article-body markdown-body">
+        
+        
+        
+    </section>
+</article>
+
+
+    <article class="article" itemscope itemprop="blogPost">
+    
+    <header class="article-header">
+        
+        <h1 itemprop="name">
+            <a href="/2019/05/23/linux-C++8/">C++多线程系统编程（八）</a>
+        </h1>
+        
+        <div class="article-meta clearfix">
+            <a class="article-date" href="http://yoursite.com/index.html">
+    
+    <i class="icon-calendar"></i>
+    
+    <time datetime="2019-05-23T06:55:38.653Z" itemprop="datePublished">2019-05-23</time>
+</a>
+
+            
+
+        </div>
+    </header>
+    
+    <section class="article-body markdown-body">
+        
+        
+        
+    </section>
+</article>
+
+
+    <article class="article" itemscope itemprop="blogPost">
+    
+    <header class="article-header">
+        
+        <h1 itemprop="name">
+            <a href="/2019/05/23/linux-C++7/">C++多线程系统编程（七）</a>
+        </h1>
+        
+        <div class="article-meta clearfix">
+            <a class="article-date" href="http://yoursite.com/index.html">
+    
+    <i class="icon-calendar"></i>
+    
+    <time datetime="2019-05-23T06:55:23.570Z" itemprop="datePublished">2019-05-23</time>
+</a>
+
+            
+
+        </div>
+    </header>
+    
+    <section class="article-body markdown-body">
+        
+        
+        
+    </section>
+</article>
+
+
+    <article class="article" itemscope itemprop="blogPost">
+    
+    <header class="article-header">
+        
+        <h1 itemprop="name">
+            <a href="/2019/05/23/linux-C++6/">C++多线程系统编程（六）</a>
+        </h1>
+        
+        <div class="article-meta clearfix">
+            <a class="article-date" href="http://yoursite.com/index.html">
+    
+    <i class="icon-calendar"></i>
+    
+    <time datetime="2019-05-23T06:55:07.983Z" itemprop="datePublished">2019-05-23</time>
+</a>
+
+            
+
+        </div>
+    </header>
+    
+    <section class="article-body markdown-body">
+        
+        
+        
+    </section>
+</article>
+
+
+    <article class="article" itemscope itemprop="blogPost">
+    
+    <header class="article-header">
+        
+        <h1 itemprop="name">
             <a href="/2019/05/23/linux-C++4/">C++多线程系统编程（四）</a>
         </h1>
         
@@ -160,122 +276,6 @@
 <p>在这个函数中，如果当前缓冲（ currentBuffer_ )剩余的空间足够大,，则会直接把日志消息拷贝（追加）到当前缓冲<br>中，否则，说明当前缓冲已经写满，就把它送入buffers_,），并试图把预备好的另一块缓冲（ nextBuffer ＿） 移用<br>（move）为当前缓冲.如果前端写入速度太快，一下子把两块缓冲都用完了，那么只好分配一块新的buffer ，作为当前<br>缓冲<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">void</span> AsyncLogging::threadFunc()</span><br><span class="line">&#123;</span><br><span class="line">  assert(running_ == <span class="literal">true</span>);</span><br><span class="line">  latch_.countDown();</span><br><span class="line">  <span class="function">LogFile <span class="title">output</span><span class="params">(basename_, rollSize_, <span class="literal">false</span>)</span></span>;</span><br><span class="line">  <span class="function">BufferPtr <span class="title">newBuffer1</span><span class="params">(<span class="keyword">new</span> Buffer)</span></span>;</span><br><span class="line">  <span class="function">BufferPtr <span class="title">newBuffer2</span><span class="params">(<span class="keyword">new</span> Buffer)</span></span>;</span><br><span class="line">  newBuffer1-&gt;bzero();</span><br><span class="line">  newBuffer2-&gt;bzero();</span><br><span class="line">  BufferVector buffersToWrite;</span><br><span class="line">  buffersToWrite.reserve(<span class="number">16</span>);</span><br><span class="line">  <span class="keyword">while</span> (running_)</span><br><span class="line">  &#123;</span><br><span class="line">    assert(newBuffer1 &amp;&amp; newBuffer1-&gt;length() == <span class="number">0</span>);</span><br><span class="line">    assert(newBuffer2 &amp;&amp; newBuffer2-&gt;length() == <span class="number">0</span>);</span><br><span class="line">    assert(buffersToWrite.empty());</span><br><span class="line"></span><br><span class="line">    &#123;</span><br><span class="line">      muduo::<span class="function">MutexLockGuard <span class="title">lock</span><span class="params">(mutex_)</span></span>;</span><br><span class="line">      <span class="keyword">if</span> (buffers_.empty())  <span class="comment">// unusual usage!</span></span><br><span class="line">      &#123;</span><br><span class="line">        cond_.waitForSeconds(flushInterval_);</span><br><span class="line">      &#125;</span><br><span class="line">      buffers_.push_back(<span class="built_in">std</span>::move(currentBuffer_));</span><br><span class="line">      currentBuffer_ = <span class="built_in">std</span>::move(newBuffer1);</span><br><span class="line">      buffersToWrite.swap(buffers_);</span><br><span class="line">      <span class="keyword">if</span> (!nextBuffer_)</span><br><span class="line">      &#123;</span><br><span class="line">        nextBuffer_ = <span class="built_in">std</span>::move(newBuffer2);</span><br><span class="line">      &#125;</span><br><span class="line">     <span class="comment">// output buffersToWri te to file</span></span><br><span class="line">     <span class="comment">//re-fill newBufferl and newBuffer2</span></span><br><span class="line">    &#125;</span><br><span class="line">   <span class="comment">// flush output</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
 <p>   首先准备好两块空闲的buffer ，以备在临界区内交换,在临界区内，等待条件触发,这里的条件有两个： 其一是超时，<br>其二是前端写满了一个或多个buffer.当“条件”满足时，先将当前缓冲（currentBuffer_）移入buffers_,并立刻将空闲的<br>newBufferl 移为当前缓冲.将buffers＿ 与buffersToWrite 交换,访问bu ffe「sToWrite ，将其中的日志数据写入文件.<br>临界区里最后干的一件事情是用newBuffer2 替换nextBuffer_,这样前端始终有一个预备buffer 可供调配.会将buffersToWrite内<br>的buffer 重新填充newBuffer1和newbuffer2，这样下一次执行的时候还有两个空闲buffer可用于替换前端的当前缓冲和<br>预备缓冲</p>
 
-        
-    </section>
-</article>
-
-
-    <article class="article" itemscope itemprop="blogPost">
-    
-    <header class="article-header">
-        
-        <h1 itemprop="name">
-            <a href="/2019/05/23/linux-C++9/">C++多线程系统编程（五）</a>
-        </h1>
-        
-        <div class="article-meta clearfix">
-            <a class="article-date" href="http://yoursite.com/index.html">
-    
-    <i class="icon-calendar"></i>
-    
-    <time datetime="2019-05-23T04:00:28.895Z" itemprop="datePublished">2019-05-23</time>
-</a>
-
-            
-
-        </div>
-    </header>
-    
-    <section class="article-body markdown-body">
-        
-        
-        
-    </section>
-</article>
-
-
-    <article class="article" itemscope itemprop="blogPost">
-    
-    <header class="article-header">
-        
-        <h1 itemprop="name">
-            <a href="/2019/05/23/linux-C++8/">C++多线程系统编程（五）</a>
-        </h1>
-        
-        <div class="article-meta clearfix">
-            <a class="article-date" href="http://yoursite.com/index.html">
-    
-    <i class="icon-calendar"></i>
-    
-    <time datetime="2019-05-23T04:00:26.112Z" itemprop="datePublished">2019-05-23</time>
-</a>
-
-            
-
-        </div>
-    </header>
-    
-    <section class="article-body markdown-body">
-        
-        
-        
-    </section>
-</article>
-
-
-    <article class="article" itemscope itemprop="blogPost">
-    
-    <header class="article-header">
-        
-        <h1 itemprop="name">
-            <a href="/2019/05/23/linux-C++7/">C++多线程系统编程（五）</a>
-        </h1>
-        
-        <div class="article-meta clearfix">
-            <a class="article-date" href="http://yoursite.com/index.html">
-    
-    <i class="icon-calendar"></i>
-    
-    <time datetime="2019-05-23T04:00:23.782Z" itemprop="datePublished">2019-05-23</time>
-</a>
-
-            
-
-        </div>
-    </header>
-    
-    <section class="article-body markdown-body">
-        
-        
-        
-    </section>
-</article>
-
-
-    <article class="article" itemscope itemprop="blogPost">
-    
-    <header class="article-header">
-        
-        <h1 itemprop="name">
-            <a href="/2019/05/23/linux-C++6/">C++多线程系统编程（五）</a>
-        </h1>
-        
-        <div class="article-meta clearfix">
-            <a class="article-date" href="http://yoursite.com/index.html">
-    
-    <i class="icon-calendar"></i>
-    
-    <time datetime="2019-05-23T04:00:21.082Z" itemprop="datePublished">2019-05-23</time>
-</a>
-
-            
-
-        </div>
-    </header>
-    
-    <section class="article-body markdown-body">
-        
-        
         
     </section>
 </article>
