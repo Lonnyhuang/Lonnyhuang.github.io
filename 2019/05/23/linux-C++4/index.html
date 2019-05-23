@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head><meta name="generator" content="Hexo 3.8.0">
+    <meta charset="UTF-8">
+
+    
+
+    
+
+    <title>C++多线程系统编程（四） | LonnyHuang</title>
+    <meta name="author" content="Lonnyhuang">
+    <meta name="version" content="1.0.0">
+    <meta name="keywords" content>
+    <meta name="description" content="C/C++系统库的线程安全性编写线程安全程序的一个难点在于线程安全是不可组合的,一个函数foo()调用了两个钱程安全的函数，而这个foo()函数本身很可能不是线程安全的    线程安全性可以遵循一个基本原则；凡是非共亭的对象都是彼此独立的，如果一个对象从始至终只被一个线程用到，那么它就是安全的。另外一个事实标准是：共亭的对象的read-only 操作是安全的11 ，前提是不能有并发的写操作。Linux上的线程标识   pthread_self 函数用于返回当前进程的标识符，其类型为pt...">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+
+    
+    <link rel="alternate" href="/atom.xml" title="LonnyHuang" type="application/atom+xml">
+    
+    
+
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+    <main class="app">
+        <header class="header clearfix">
+    <div id="nav" class="nav">
+    <div class="nav-mobile">
+        <button id="open-panel" class="open-panel nav-mobile-item"><i class="icon-documents"></i></button>
+        <h1 class="nav-mobile-title nav-mobile-item">LonnyHuang</h1>
+        <button id="open-menus" class="open-panel nav-mobile-item"><i class="icon-library"></i></button>
+    </div>
+
+    <nav id="nav-inner" class="nav-inner">
+        
+            <a class="nav-item" href="/">
+                <span class="nav-text">首页</span>
+            </a>
+        
+            <a class="nav-item" href="/categories/front-end">
+                <span class="nav-text">前端</span>
+            </a>
+        
+            <a class="nav-item" href="/categories/back-end">
+                <span class="nav-text">后端</span>
+            </a>
+        
+            <a class="nav-item" href="/tags">
+                <span class="nav-text">标签</span>
+            </a>
+        
+            <a class="nav-item" href="/archives">
+                <span class="nav-text">归档</span>
+            </a>
+        
+            <a class="nav-item" href="/atom.xml">
+                <span class="nav-text">订阅</span>
+            </a>
+        
+            <a class="nav-item" href="/about">
+                <span class="nav-text">关于</span>
+            </a>
+        
+    </nav>
+</div>
+
+    <aside id="aside" class="aside">
+    <div id="aside-mask" class="aside-mask"></div>
+    <div id="aside-inner" class="aside-inner">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit"><i class="icon-search-stroke"></i></button><input type="hidden" name="sitesearch" value="http://yoursite.com"></form>
+
+        
+        
+        
+        
+
+        
+        <ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#C-C-系统库的线程安全性"><span class="toc-number">1.</span> <span class="toc-text">C/C++系统库的线程安全性</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Linux上的线程标识"><span class="toc-number">2.</span> <span class="toc-text">Linux上的线程标识</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#线程的创建与销毁的守则"><span class="toc-number">3.</span> <span class="toc-text">线程的创建与销毁的守则</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#关键字-thread"><span class="toc-number">4.</span> <span class="toc-text">关键字__thread</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#多线程与IO"><span class="toc-number">5.</span> <span class="toc-text">多线程与IO</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#多线程与fork"><span class="toc-number">6.</span> <span class="toc-text">多线程与fork()</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#多线程与signal"><span class="toc-number">7.</span> <span class="toc-text">多线程与signal()</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#多线程异步日志"><span class="toc-number">8.</span> <span class="toc-text">多线程异步日志</span></a></li></ol>
+        
+    </div>
+</aside>
+
+</header>
+
+        <div id="content" class="content"><article class="article" itemscope itemprop="blogPost">
+    
+    <header class="article-header">
+        
+        <h1 itemprop="name">
+            C++多线程系统编程（四）
+        </h1>
+        
+        <div class="article-meta clearfix">
+            <a class="article-date" href="http://yoursite.com/2019/05/23/linux-C++4/index.html">
+    
+    <i class="icon-calendar"></i>
+    
+    <time datetime="2019-05-23T06:52:46.152Z" itemprop="datePublished">2019-05-23</time>
+</a>
+
+            
+
+        </div>
+    </header>
+    
+    <section class="article-body markdown-body">
+        
+        <h3 id="C-C-系统库的线程安全性"><a href="#C-C-系统库的线程安全性" class="headerlink" title="C/C++系统库的线程安全性"></a>C/C++系统库的线程安全性</h3><pre><code>编写线程安全程序的一个难点在于线程安全是不可组合的,一个函数foo()调用了两个钱程安全的
+</code></pre><p>函数，而这个foo()函数本身很可能不是线程安全的<br>    线程安全性可以遵循一个基本原则；凡是非共亭的对象都是彼此独立的，如果一个对象从始至终<br>只被一个线程用到，那么它就是安全的。另外一个事实标准是：共亭的对象的read-only 操作是安全<br>的11 ，前提是不能有并发的写操作。</p>
+<h3 id="Linux上的线程标识"><a href="#Linux上的线程标识" class="headerlink" title="Linux上的线程标识"></a>Linux上的线程标识</h3><p>   pthread_self 函数用于返回当前进程的标识符，其类型为pthread_t, pthread_t 不一定是一个数<br>值类型（整数或指针），也有可能是一个结构体.因此Pthreads专门提供了pthread_equal函数用于对比<br>两个钱程标识符是否相等<br>   Pthreads 只保证同一进程之内，同一时刻的各个钱程的id 不同；不能保证同一进程先后多个线程<br>具有不同的id.<br>   pthread_t 并不适合用作程序中对线程的标识符。使用gettid()（::syscall(SYS_gettid)）系统调<br>用的返回值作为线程id, 这么做的好处有：<br>1、它的类型是pid_t，其值通常是一个小整数，便于在日志中输出。<br>2、它直接表示内核的任务调度id,因此在/proc文件系统中可以轻易找到对应项：/proc/tid 或/prod/pid/task/tid<br>3、在其他系统工具中也容易定位到具体某一个线程<br>4、任何时刻都是全局唯一的，并且由于Linux 分配新pid 采用递增轮回办法，短时间内启动的多个线程<br>也会具有不同的线程id。<br>5、0 是非法值，因为操作系统第一个进程init 的pid 是1。</p>
+<h3 id="线程的创建与销毁的守则"><a href="#线程的创建与销毁的守则" class="headerlink" title="线程的创建与销毁的守则"></a>线程的创建与销毁的守则</h3><p>1、程序库不应该在未提前告知的情况下创建自己的“背景线程”<br>2、尽量用相同的方式创建线程<br>3、在进入main()函数之前不应该启动线程。<br>4、程序中线程的创建最好能在初始化阶段全部完成</p>
+<p>线程的销毁有几种方式:<br>1、向然死亡。从线程主函数返回，线程正常退出<br>2、非正常死亡。从线程主函数抛出异常或线程触发segfault 信号等非法操作<br>3、自杀。在线程中调用pthread_exit()来立刻退出线程<br>4、他杀。其他线程调用pthread_cancel（）来强制终止某个线程</p>
+<p>   长期运行的多线程服务程序的时候，同以不必追求安全地退出，而是让进程进入拒绝服务状态，然后就<br>可以直接杀掉</p>
+<h3 id="关键字-thread"><a href="#关键字-thread" class="headerlink" title="关键字__thread"></a>关键字__thread</h3><p>  一thread 使用规则2：只能用于修饰POD 类型，不能修饰class 类型，因为无法自动调用构造函数和析构<br>函数。一thread 可以用于修饰全局变量、函数内的静态变量，但是不能用于修饰函数的局部变量或者class<br>的普通成员变量。另外，＿＿thread变量的初始化只能用编译期常量<br>   __thread 变量是每个线程有一份独立实体, 各个线程的变量值互不干扰。还可以修饰那些“值可能会变，<br>带有全局性，但是又不值得用全局锁保护”的变量。</p>
+<h3 id="多线程与IO"><a href="#多线程与IO" class="headerlink" title="多线程与IO"></a>多线程与IO</h3><p>   操作文件描述符的系统调用本身是线程安全的，我们不用担心多个线程同时操作文件描述符会造成进程<br>崩溃或内核崩溃,但是，多个钱程同时操作同一个socket 文件描述精确实很麻烦,需要考虑的情况如下：<br>1、如果一个线程正在阻塞地read(2〕某个socket，而另一个线程close(2）了此socket 。<br>2、如果一个线程正在阻塞地accept(2）某个listening socket ，而另一个线程close(2）了此socket。<br>3、一个线程正准备read (2）某个socket，而另一个钱程close(2）了此socket；第三个线程又恰好open(2)了<br>另一个文件描述符，其fd 号码正好与前面的socket 相同<br>   多钱程程序应该遵循的原则是： 每个文件描述符只由一个线程操作，从而轻松解决消息收发的顺序性问<br>题，也避免了关闭文件描述符的各种race condition。</p>
+<p>  fork（）之后，子进程继承了父进程的几乎全部状态，但也有少数例外。子进程会继承地址空间和文件描述<br>符，因此用于管理动态内存和文件描述符的RAil class 都能正常工作。但是子进程不会继承：<br>1、父进程的内存锁， mlock(2）、mlockall(2）<br>2、父进程的文件锁， fcntl(2）。<br>3、父进程的某些定时器， setitimer(2)、alarm(2)、timer_create()</p>
+<h3 id="多线程与fork"><a href="#多线程与fork" class="headerlink" title="多线程与fork()"></a>多线程与fork()</h3><p>  frok()一般不能在多线程程序中调用，因为Linux 的fork()只克隆当前线程的thread of control ，不克隆其<br>他线程。fork（）之后，除了当前线程之外，其他线程都消失了。</p>
+<h3 id="多线程与signal"><a href="#多线程与signal" class="headerlink" title="多线程与signal()"></a>多线程与signal()</h3><p>   在多钱程程序中，使用signal 的第一原则是不要使用signal:<br>1、不要用signal 作为IPC 的手段，包括不要用SIGUSRl 等信号来触发服务端的行为<br>2、也不要使用基于signal 实现的定时函数，包括alarm/ ualarm/setitimer/timer_create 、sleep/usleep 等等<br>3、不主动处理各种异常信号（ SIGTERM 、SIGI町等等），只用默认语义：结束进程<br>4、在没有别的替代方法的情况下（比方说需要处理SIGCHLD 信号）， 把异步信号转换为同步的文件描述符事件</p>
+<h3 id="多线程异步日志"><a href="#多线程异步日志" class="headerlink" title="多线程异步日志"></a>多线程异步日志</h3><p>   采用的是双缓冲,基本思路是准备两块buffer: A 和B ， 前端负责往buffer A填数据（日志消息），后端负责将<br>buffer B的数据写入文件。当buffer A 写满之后，交换A 和B ，让后端将buffer A 的数据写人文件，而前端则往<br>buffer B 填入新的日志消息，如此往复<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//头文件</span></span><br><span class="line"><span class="keyword">typedef</span> muduo::detail::FixedBuffer&lt;muduo::detail::kLargeBuffer&gt; Buffer;</span><br><span class="line"><span class="keyword">typedef</span> <span class="built_in">std</span>::<span class="built_in">vector</span>&lt;<span class="built_in">std</span>::<span class="built_in">unique_ptr</span>&lt;Buffer&gt;&gt; BufferVector;</span><br><span class="line"><span class="keyword">typedef</span> BufferVector::value_type BufferPtr;</span><br><span class="line">muduo::MutexLock mutex_;</span><br><span class="line">muduo::<span class="function">Condition cond_ <span class="title">GUARDED_BY</span><span class="params">(mutex_)</span></span>;</span><br><span class="line"><span class="function">BufferPtr currentBuffer_ <span class="title">GUARDED_BY</span><span class="params">(mutex_)</span></span>;  <span class="comment">//当前缓冲</span></span><br><span class="line"><span class="function">BufferPtr nextBuffer_ <span class="title">GUARDED_BY</span><span class="params">(mutex_)</span></span>; <span class="comment">//预备缓冲</span></span><br><span class="line"><span class="function">BufferVector buffers_ <span class="title">GUARDED_BY</span><span class="params">(mutex_)</span></span>;  <span class="comment">//待写入文件的已填满缓冲</span></span><br><span class="line"></span><br><span class="line"><span class="comment">//cpp</span></span><br><span class="line"><span class="keyword">void</span> AsyncLogging::append(<span class="keyword">const</span> <span class="keyword">char</span>* logline, <span class="keyword">int</span> len)</span><br><span class="line">&#123;</span><br><span class="line">  muduo::<span class="function">MutexLockGuard <span class="title">lock</span><span class="params">(mutex_)</span></span>;</span><br><span class="line">  <span class="keyword">if</span> (currentBuffer_-&gt;avail() &gt; len)</span><br><span class="line">  &#123;</span><br><span class="line">    currentBuffer_-&gt;append(logline, len);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">else</span></span><br><span class="line">  &#123;</span><br><span class="line">    buffers_.push_back(<span class="built_in">std</span>::move(currentBuffer_));</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (nextBuffer_)</span><br><span class="line">    &#123;</span><br><span class="line">      currentBuffer_ = <span class="built_in">std</span>::move(nextBuffer_);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">    &#123;</span><br><span class="line">      currentBuffer_.reset(<span class="keyword">new</span> Buffer); <span class="comment">// Rarely happens</span></span><br><span class="line">    &#125;</span><br><span class="line">    currentBuffer_-&gt;append(logline, len);</span><br><span class="line">    cond_.notify();</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>在这个函数中，如果当前缓冲（ currentBuffer_ )剩余的空间足够大,，则会直接把日志消息拷贝（追加）到当前缓冲<br>中，否则，说明当前缓冲已经写满，就把它送入buffers_,），并试图把预备好的另一块缓冲（ nextBuffer ＿） 移用<br>（move）为当前缓冲.如果前端写入速度太快，一下子把两块缓冲都用完了，那么只好分配一块新的buffer ，作为当前<br>缓冲<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">void</span> AsyncLogging::threadFunc()</span><br><span class="line">&#123;</span><br><span class="line">  assert(running_ == <span class="literal">true</span>);</span><br><span class="line">  latch_.countDown();</span><br><span class="line">  <span class="function">LogFile <span class="title">output</span><span class="params">(basename_, rollSize_, <span class="literal">false</span>)</span></span>;</span><br><span class="line">  <span class="function">BufferPtr <span class="title">newBuffer1</span><span class="params">(<span class="keyword">new</span> Buffer)</span></span>;</span><br><span class="line">  <span class="function">BufferPtr <span class="title">newBuffer2</span><span class="params">(<span class="keyword">new</span> Buffer)</span></span>;</span><br><span class="line">  newBuffer1-&gt;bzero();</span><br><span class="line">  newBuffer2-&gt;bzero();</span><br><span class="line">  BufferVector buffersToWrite;</span><br><span class="line">  buffersToWrite.reserve(<span class="number">16</span>);</span><br><span class="line">  <span class="keyword">while</span> (running_)</span><br><span class="line">  &#123;</span><br><span class="line">    assert(newBuffer1 &amp;&amp; newBuffer1-&gt;length() == <span class="number">0</span>);</span><br><span class="line">    assert(newBuffer2 &amp;&amp; newBuffer2-&gt;length() == <span class="number">0</span>);</span><br><span class="line">    assert(buffersToWrite.empty());</span><br><span class="line"></span><br><span class="line">    &#123;</span><br><span class="line">      muduo::<span class="function">MutexLockGuard <span class="title">lock</span><span class="params">(mutex_)</span></span>;</span><br><span class="line">      <span class="keyword">if</span> (buffers_.empty())  <span class="comment">// unusual usage!</span></span><br><span class="line">      &#123;</span><br><span class="line">        cond_.waitForSeconds(flushInterval_);</span><br><span class="line">      &#125;</span><br><span class="line">      buffers_.push_back(<span class="built_in">std</span>::move(currentBuffer_));</span><br><span class="line">      currentBuffer_ = <span class="built_in">std</span>::move(newBuffer1);</span><br><span class="line">      buffersToWrite.swap(buffers_);</span><br><span class="line">      <span class="keyword">if</span> (!nextBuffer_)</span><br><span class="line">      &#123;</span><br><span class="line">        nextBuffer_ = <span class="built_in">std</span>::move(newBuffer2);</span><br><span class="line">      &#125;</span><br><span class="line">     <span class="comment">// output buffersToWri te to file</span></span><br><span class="line">     <span class="comment">//re-fill newBufferl and newBuffer2</span></span><br><span class="line">    &#125;</span><br><span class="line">   <span class="comment">// flush output</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>   首先准备好两块空闲的buffer ，以备在临界区内交换,在临界区内，等待条件触发,这里的条件有两个： 其一是超时，<br>其二是前端写满了一个或多个buffer.当“条件”满足时，先将当前缓冲（currentBuffer_）移入buffers_,并立刻将空闲的<br>newBufferl 移为当前缓冲.将buffers＿ 与buffersToWrite 交换,访问bu ffe「sToWrite ，将其中的日志数据写入文件.<br>临界区里最后干的一件事情是用newBuffer2 替换nextBuffer_,这样前端始终有一个预备buffer 可供调配.会将buffersToWrite内<br>的buffer 重新填充newBuffer1和newbuffer2，这样下一次执行的时候还有两个空闲buffer可用于替换前端的当前缓冲和<br>预备缓冲</p>
+
+        
+    </section>
+</article>
+
+
+
+<div class="comments">
+    <div id="comments"></div>
+    <script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+    <script>
+    new Gitalk({
+        clientID: "7fbe80427f54741e289f",
+        clientSecret: "f34ed5fd92e54c9000bd37ba951948cb939deff5",
+        repo: "Lonnyhuang.github.io",
+        owner: "Lonnyhuang",
+        admin: ["Lonnyhuang"],
+        id: "2019/05/23/linux-C++4",
+        distractionFreeMode: true,
+        title: "C++多线程系统编程（四）",
+        body: "http://yoursite.com/2019/05/23/linux-C++4/",
+        labels: []
+    }).render('comments');
+    </script>
+</div>
+
+</div>
+        <footer class="footer">
+    Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>, Theme by <a href="https://github.com/sanonz/hexo-theme-concise" target="_blank">Concise</a>
+
+    
+</footer>
+
+    </main>
+
+    <script type="text/javascript" src="https://cdn.bootcss.com/jquery/1.9.0/jquery.min.js"></script>
+    <script type="text/javascript">
+    $(function() {
+        var nodes = {
+            nav: $('#nav'),
+            aside: $('#aside'),
+            asideInner: $('#aside-inner'),
+            navInner: $('#nav-inner')
+        };
+
+        var doing = false;
+        nodes.asideInner.on('webkitAnimationEnd mozAnimationEnd oAnimationEnd oanimationend animationend', function() {
+            if (nodes.aside.hasClass('mobile-open')) {
+                nodes.aside.removeClass('mobile-open');
+            } else {
+                nodes.aside.removeClass('mobile-close panel-show');
+            }
+            doing = false;
+        });
+        $('#open-panel, #aside-mask').on('click', function() {
+            if (doing) {
+                return;
+            }
+            
+            if (nodes.aside.hasClass('panel-show')) {
+                nodes.aside.addClass('mobile-close');
+            } else {
+                nodes.aside.addClass('mobile-open panel-show');
+            }
+        });
+        $('#open-menus').on('click', function() {
+            nodes.navInner.slideToggle();
+        });
+
+        if (window.innerWidth <= 960) {
+            setTimeout(function() {
+                nodes.navInner.slideUp();
+            }, 3000);
+        }
+    });
+    </script>
+    
+        <script type="text/javascript" src="/js/scrollspy.min.js"></script>
+        <script type="text/javascript">
+        $(document.body).scrollspy({target: '#aside-inner'});
+        </script>
+    
+
+</body>
+</html>

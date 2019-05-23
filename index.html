@@ -127,7 +127,7 @@
     <header class="article-header">
         
         <h1 itemprop="name">
-            <a href="/2019/05/22/linux-C++4/">C++多线程系统编程（四）</a>
+            <a href="/2019/05/23/linux-C++4/">C++多线程系统编程（四）</a>
         </h1>
         
         <div class="article-meta clearfix">
@@ -135,7 +135,7 @@
     
     <i class="icon-calendar"></i>
     
-    <time datetime="2019-05-22T07:08:26.770Z" itemprop="datePublished">2019-05-22</time>
+    <time datetime="2019-05-23T06:52:46.152Z" itemprop="datePublished">2019-05-23</time>
 </a>
 
             
@@ -152,9 +152,159 @@
 <p>线程的销毁有几种方式:<br>1、向然死亡。从线程主函数返回，线程正常退出<br>2、非正常死亡。从线程主函数抛出异常或线程触发segfault 信号等非法操作<br>3、自杀。在线程中调用pthread_exit()来立刻退出线程<br>4、他杀。其他线程调用pthread_cancel（）来强制终止某个线程</p>
 <p>   长期运行的多线程服务程序的时候，同以不必追求安全地退出，而是让进程进入拒绝服务状态，然后就<br>可以直接杀掉</p>
 <h3 id="关键字-thread"><a href="#关键字-thread" class="headerlink" title="关键字__thread"></a>关键字__thread</h3><p>  一thread 使用规则2：只能用于修饰POD 类型，不能修饰class 类型，因为无法自动调用构造函数和析构<br>函数。一thread 可以用于修饰全局变量、函数内的静态变量，但是不能用于修饰函数的局部变量或者class<br>的普通成员变量。另外，＿＿thread变量的初始化只能用编译期常量<br>   __thread 变量是每个线程有一份独立实体, 各个线程的变量值互不干扰。还可以修饰那些“值可能会变，<br>带有全局性，但是又不值得用全局锁保护”的变量。</p>
-<h3 id="多线程与IO"><a href="#多线程与IO" class="headerlink" title="多线程与IO"></a>多线程与IO</h3><pre><code>操作文件描述符的系统调用本身是线程安全的，我们不用担心多个线程同时操作文件描述符会造成进程
-</code></pre><p>崩溃或内核崩溃</p>
+<h3 id="多线程与IO"><a href="#多线程与IO" class="headerlink" title="多线程与IO"></a>多线程与IO</h3><p>   操作文件描述符的系统调用本身是线程安全的，我们不用担心多个线程同时操作文件描述符会造成进程<br>崩溃或内核崩溃,但是，多个钱程同时操作同一个socket 文件描述精确实很麻烦,需要考虑的情况如下：<br>1、如果一个线程正在阻塞地read(2〕某个socket，而另一个线程close(2）了此socket 。<br>2、如果一个线程正在阻塞地accept(2）某个listening socket ，而另一个线程close(2）了此socket。<br>3、一个线程正准备read (2）某个socket，而另一个钱程close(2）了此socket；第三个线程又恰好open(2)了<br>另一个文件描述符，其fd 号码正好与前面的socket 相同<br>   多钱程程序应该遵循的原则是： 每个文件描述符只由一个线程操作，从而轻松解决消息收发的顺序性问<br>题，也避免了关闭文件描述符的各种race condition。</p>
+<p>  fork（）之后，子进程继承了父进程的几乎全部状态，但也有少数例外。子进程会继承地址空间和文件描述<br>符，因此用于管理动态内存和文件描述符的RAil class 都能正常工作。但是子进程不会继承：<br>1、父进程的内存锁， mlock(2）、mlockall(2）<br>2、父进程的文件锁， fcntl(2）。<br>3、父进程的某些定时器， setitimer(2)、alarm(2)、timer_create()</p>
+<h3 id="多线程与fork"><a href="#多线程与fork" class="headerlink" title="多线程与fork()"></a>多线程与fork()</h3><p>  frok()一般不能在多线程程序中调用，因为Linux 的fork()只克隆当前线程的thread of control ，不克隆其<br>他线程。fork（）之后，除了当前线程之外，其他线程都消失了。</p>
+<h3 id="多线程与signal"><a href="#多线程与signal" class="headerlink" title="多线程与signal()"></a>多线程与signal()</h3><p>   在多钱程程序中，使用signal 的第一原则是不要使用signal:<br>1、不要用signal 作为IPC 的手段，包括不要用SIGUSRl 等信号来触发服务端的行为<br>2、也不要使用基于signal 实现的定时函数，包括alarm/ ualarm/setitimer/timer_create 、sleep/usleep 等等<br>3、不主动处理各种异常信号（ SIGTERM 、SIGI町等等），只用默认语义：结束进程<br>4、在没有别的替代方法的情况下（比方说需要处理SIGCHLD 信号）， 把异步信号转换为同步的文件描述符事件</p>
+<h3 id="多线程异步日志"><a href="#多线程异步日志" class="headerlink" title="多线程异步日志"></a>多线程异步日志</h3><p>   采用的是双缓冲,基本思路是准备两块buffer: A 和B ， 前端负责往buffer A填数据（日志消息），后端负责将<br>buffer B的数据写入文件。当buffer A 写满之后，交换A 和B ，让后端将buffer A 的数据写人文件，而前端则往<br>buffer B 填入新的日志消息，如此往复<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//头文件</span></span><br><span class="line"><span class="keyword">typedef</span> muduo::detail::FixedBuffer&lt;muduo::detail::kLargeBuffer&gt; Buffer;</span><br><span class="line"><span class="keyword">typedef</span> <span class="built_in">std</span>::<span class="built_in">vector</span>&lt;<span class="built_in">std</span>::<span class="built_in">unique_ptr</span>&lt;Buffer&gt;&gt; BufferVector;</span><br><span class="line"><span class="keyword">typedef</span> BufferVector::value_type BufferPtr;</span><br><span class="line">muduo::MutexLock mutex_;</span><br><span class="line">muduo::<span class="function">Condition cond_ <span class="title">GUARDED_BY</span><span class="params">(mutex_)</span></span>;</span><br><span class="line"><span class="function">BufferPtr currentBuffer_ <span class="title">GUARDED_BY</span><span class="params">(mutex_)</span></span>;  <span class="comment">//当前缓冲</span></span><br><span class="line"><span class="function">BufferPtr nextBuffer_ <span class="title">GUARDED_BY</span><span class="params">(mutex_)</span></span>; <span class="comment">//预备缓冲</span></span><br><span class="line"><span class="function">BufferVector buffers_ <span class="title">GUARDED_BY</span><span class="params">(mutex_)</span></span>;  <span class="comment">//待写入文件的已填满缓冲</span></span><br><span class="line"></span><br><span class="line"><span class="comment">//cpp</span></span><br><span class="line"><span class="keyword">void</span> AsyncLogging::append(<span class="keyword">const</span> <span class="keyword">char</span>* logline, <span class="keyword">int</span> len)</span><br><span class="line">&#123;</span><br><span class="line">  muduo::<span class="function">MutexLockGuard <span class="title">lock</span><span class="params">(mutex_)</span></span>;</span><br><span class="line">  <span class="keyword">if</span> (currentBuffer_-&gt;avail() &gt; len)</span><br><span class="line">  &#123;</span><br><span class="line">    currentBuffer_-&gt;append(logline, len);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="keyword">else</span></span><br><span class="line">  &#123;</span><br><span class="line">    buffers_.push_back(<span class="built_in">std</span>::move(currentBuffer_));</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (nextBuffer_)</span><br><span class="line">    &#123;</span><br><span class="line">      currentBuffer_ = <span class="built_in">std</span>::move(nextBuffer_);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">    &#123;</span><br><span class="line">      currentBuffer_.reset(<span class="keyword">new</span> Buffer); <span class="comment">// Rarely happens</span></span><br><span class="line">    &#125;</span><br><span class="line">    currentBuffer_-&gt;append(logline, len);</span><br><span class="line">    cond_.notify();</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>在这个函数中，如果当前缓冲（ currentBuffer_ )剩余的空间足够大,，则会直接把日志消息拷贝（追加）到当前缓冲<br>中，否则，说明当前缓冲已经写满，就把它送入buffers_,），并试图把预备好的另一块缓冲（ nextBuffer ＿） 移用<br>（move）为当前缓冲.如果前端写入速度太快，一下子把两块缓冲都用完了，那么只好分配一块新的buffer ，作为当前<br>缓冲<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">void</span> AsyncLogging::threadFunc()</span><br><span class="line">&#123;</span><br><span class="line">  assert(running_ == <span class="literal">true</span>);</span><br><span class="line">  latch_.countDown();</span><br><span class="line">  <span class="function">LogFile <span class="title">output</span><span class="params">(basename_, rollSize_, <span class="literal">false</span>)</span></span>;</span><br><span class="line">  <span class="function">BufferPtr <span class="title">newBuffer1</span><span class="params">(<span class="keyword">new</span> Buffer)</span></span>;</span><br><span class="line">  <span class="function">BufferPtr <span class="title">newBuffer2</span><span class="params">(<span class="keyword">new</span> Buffer)</span></span>;</span><br><span class="line">  newBuffer1-&gt;bzero();</span><br><span class="line">  newBuffer2-&gt;bzero();</span><br><span class="line">  BufferVector buffersToWrite;</span><br><span class="line">  buffersToWrite.reserve(<span class="number">16</span>);</span><br><span class="line">  <span class="keyword">while</span> (running_)</span><br><span class="line">  &#123;</span><br><span class="line">    assert(newBuffer1 &amp;&amp; newBuffer1-&gt;length() == <span class="number">0</span>);</span><br><span class="line">    assert(newBuffer2 &amp;&amp; newBuffer2-&gt;length() == <span class="number">0</span>);</span><br><span class="line">    assert(buffersToWrite.empty());</span><br><span class="line"></span><br><span class="line">    &#123;</span><br><span class="line">      muduo::<span class="function">MutexLockGuard <span class="title">lock</span><span class="params">(mutex_)</span></span>;</span><br><span class="line">      <span class="keyword">if</span> (buffers_.empty())  <span class="comment">// unusual usage!</span></span><br><span class="line">      &#123;</span><br><span class="line">        cond_.waitForSeconds(flushInterval_);</span><br><span class="line">      &#125;</span><br><span class="line">      buffers_.push_back(<span class="built_in">std</span>::move(currentBuffer_));</span><br><span class="line">      currentBuffer_ = <span class="built_in">std</span>::move(newBuffer1);</span><br><span class="line">      buffersToWrite.swap(buffers_);</span><br><span class="line">      <span class="keyword">if</span> (!nextBuffer_)</span><br><span class="line">      &#123;</span><br><span class="line">        nextBuffer_ = <span class="built_in">std</span>::move(newBuffer2);</span><br><span class="line">      &#125;</span><br><span class="line">     <span class="comment">// output buffersToWri te to file</span></span><br><span class="line">     <span class="comment">//re-fill newBufferl and newBuffer2</span></span><br><span class="line">    &#125;</span><br><span class="line">   <span class="comment">// flush output</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>   首先准备好两块空闲的buffer ，以备在临界区内交换,在临界区内，等待条件触发,这里的条件有两个： 其一是超时，<br>其二是前端写满了一个或多个buffer.当“条件”满足时，先将当前缓冲（currentBuffer_）移入buffers_,并立刻将空闲的<br>newBufferl 移为当前缓冲.将buffers＿ 与buffersToWrite 交换,访问bu ffe「sToWrite ，将其中的日志数据写入文件.<br>临界区里最后干的一件事情是用newBuffer2 替换nextBuffer_,这样前端始终有一个预备buffer 可供调配.会将buffersToWrite内<br>的buffer 重新填充newBuffer1和newbuffer2，这样下一次执行的时候还有两个空闲buffer可用于替换前端的当前缓冲和<br>预备缓冲</p>
 
+        
+    </section>
+</article>
+
+
+    <article class="article" itemscope itemprop="blogPost">
+    
+    <header class="article-header">
+        
+        <h1 itemprop="name">
+            <a href="/2019/05/23/linux-C++9/">C++多线程系统编程（五）</a>
+        </h1>
+        
+        <div class="article-meta clearfix">
+            <a class="article-date" href="http://yoursite.com/index.html">
+    
+    <i class="icon-calendar"></i>
+    
+    <time datetime="2019-05-23T04:00:28.895Z" itemprop="datePublished">2019-05-23</time>
+</a>
+
+            
+
+        </div>
+    </header>
+    
+    <section class="article-body markdown-body">
+        
+        
+        
+    </section>
+</article>
+
+
+    <article class="article" itemscope itemprop="blogPost">
+    
+    <header class="article-header">
+        
+        <h1 itemprop="name">
+            <a href="/2019/05/23/linux-C++8/">C++多线程系统编程（五）</a>
+        </h1>
+        
+        <div class="article-meta clearfix">
+            <a class="article-date" href="http://yoursite.com/index.html">
+    
+    <i class="icon-calendar"></i>
+    
+    <time datetime="2019-05-23T04:00:26.112Z" itemprop="datePublished">2019-05-23</time>
+</a>
+
+            
+
+        </div>
+    </header>
+    
+    <section class="article-body markdown-body">
+        
+        
+        
+    </section>
+</article>
+
+
+    <article class="article" itemscope itemprop="blogPost">
+    
+    <header class="article-header">
+        
+        <h1 itemprop="name">
+            <a href="/2019/05/23/linux-C++7/">C++多线程系统编程（五）</a>
+        </h1>
+        
+        <div class="article-meta clearfix">
+            <a class="article-date" href="http://yoursite.com/index.html">
+    
+    <i class="icon-calendar"></i>
+    
+    <time datetime="2019-05-23T04:00:23.782Z" itemprop="datePublished">2019-05-23</time>
+</a>
+
+            
+
+        </div>
+    </header>
+    
+    <section class="article-body markdown-body">
+        
+        
+        
+    </section>
+</article>
+
+
+    <article class="article" itemscope itemprop="blogPost">
+    
+    <header class="article-header">
+        
+        <h1 itemprop="name">
+            <a href="/2019/05/23/linux-C++6/">C++多线程系统编程（五）</a>
+        </h1>
+        
+        <div class="article-meta clearfix">
+            <a class="article-date" href="http://yoursite.com/index.html">
+    
+    <i class="icon-calendar"></i>
+    
+    <time datetime="2019-05-23T04:00:21.082Z" itemprop="datePublished">2019-05-23</time>
+</a>
+
+            
+
+        </div>
+    </header>
+    
+    <section class="article-body markdown-body">
+        
+        
+        
+    </section>
+</article>
+
+
+    <article class="article" itemscope itemprop="blogPost">
+    
+    <header class="article-header">
+        
+        <h1 itemprop="name">
+            <a href="/2019/05/23/linux-C++5/">C++多线程系统编程（五）</a>
+        </h1>
+        
+        <div class="article-meta clearfix">
+            <a class="article-date" href="http://yoursite.com/index.html">
+    
+    <i class="icon-calendar"></i>
+    
+    <time datetime="2019-05-23T04:00:13.502Z" itemprop="datePublished">2019-05-23</time>
+</a>
+
+            
+
+        </div>
+    </header>
+    
+    <section class="article-body markdown-body">
+        
+        
         
     </section>
 </article>
